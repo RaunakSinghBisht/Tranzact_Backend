@@ -10,6 +10,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Routes
+app.get('/', (req, res)=>{res.send("Server is Running...")}) // Health Check API
 app.use('/api/auth', authRoutes)
 app.use('/api/accounts', accountRoutes)
 app.use('/api/transactions', transactionRoutes)
