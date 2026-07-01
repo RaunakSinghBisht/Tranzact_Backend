@@ -21,6 +21,10 @@ router.get('/', authMiddleware.verifyToken, accountController.getAllAccounts)
  * @desc Get account balance
  */
 router.get('/balance/:accountId', authMiddleware.verifyToken, accountController.getAccountBalance)
-
+/** 
+ * @route GET /api/accounts/getLedger/:accountId
+ * @desc Get all ledger entries for a specific account
+ */
+router.get('/getLedger/:accountId', authMiddleware.verifyToken, accountController.getLedgerEntries)
 
 module.exports = router

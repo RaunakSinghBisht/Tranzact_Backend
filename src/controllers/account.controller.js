@@ -1,4 +1,5 @@
 const accountModel = require("../models/account.model");
+const ledgerModel = require("../models/ledger.model");
 
 const createAccount = async (req, res) => {
   try {
@@ -55,5 +56,32 @@ const getAccountBalance = async (req, res) => {
     .json({ message: "Account balance retrieved successfully :", balance });
 };
 
+const getLedgerEntries = async (req, res) => {
+  try {
+    const accountId = req.params.accountId;
 
-module.exports = { createAccount, getAccountBalance, getAllAccounts };
+    const account = await accountModel.findById(accountId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+    if (req.user._id.toString() !== account.user.toString()) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to view this account" });
+    }
+
+    const ledgers = await ledgerModel.find({ account: accountId }).populate('transaction');
+    return res.status(200).json({
+      message: "Ledger entries retrieved successfully",
+      ledgers,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+module.exports = { createAccount, getAccountBalance, getAllAccounts, getLedgerEntries };
