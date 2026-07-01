@@ -121,5 +121,15 @@ const logoutUser = async (req, res) => {
   res.status(200).json({ message: "Logout successful" });
 };
 
+const isLoggedIn = (req, res) => {
+  res.status(200).json({
+    user:{
+      _id : req.user._id,
+      name : req.user.name,
+      email : req.user.email
+    }
+  })
+}
 
-module.exports = { registerUser, loginUser, logoutUser };
+
+module.exports = { registerUser, loginUser, logoutUser, isLoggedIn };
