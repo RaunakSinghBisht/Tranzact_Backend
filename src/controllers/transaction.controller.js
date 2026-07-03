@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const PDFDocument = require("pdfkit");
 const transactionModel = require("../models/transaction.model");
 const accountModel = require("../models/account.model");
 const ledgerModel = require("../models/ledger.model");
@@ -289,6 +290,7 @@ const cashDepositController = async (req, res) => {
     return res.status(500).json({ message: "Cash deposit failed." });
   }
 };
+
 const getAllTransactions = async (req, res) => {
   try {
     const accountId = req.params.accountId;
@@ -321,4 +323,81 @@ const getAllTransactions = async (req, res) => {
   }
 };
 
-module.exports = { createTransaction, cashDepositController, getAllTransactions };
+const downloadTransactionPDF = async (req, res) => {
+  try {
+    const { accountId, fromDate, toDate } = req.body;
+
+    if (!accountId || !fromDate || !toDate) {
+      return res.status(400).json({ message: "accountId, fromDate, and toDate are required." });
+    }
+
+    const account = await accountModel.findById(accountId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found." });
+    }
+
+    const userId = req.user._id ? req.user._id.toString() : req.user.id;
+    if (account.user.toString() !== userId) {
+      return res.status(403).json({ message: "You are not authorized to view this account's transactions." });
+    }
+
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+
+    const transactions = await transactionModel.find({
+      $or: [{ fromAccount: accountId }, { toAccount: accountId }],
+      createdAt: { $gte: start, $lte: end }
+    }).sort({ createdAt: -1 });
+
+    const doc = new PDFDocument({ margin: 50 });
+
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
+      res.setHeader('Content-Length', Buffer.byteLength(pdfData));
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=transactions-${accountId}.pdf`);
+      res.end(pdfData);
+    });
+
+    doc.fontSize(20).text('Transaction History', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Account ID: ${accountId}`);
+    doc.text(`Period: ${start.toLocaleDateString()} to ${end.toLocaleDateString()}`);
+    doc.moveDown(2);
+
+    if (transactions.length === 0) {
+      doc.text('No transactions found in this period.');
+    } else {
+      transactions.forEach(tx => {
+        const isCredit = tx.toAccount && tx.toAccount.toString() === accountId;
+        const type = isCredit ? 'CREDIT' : 'DEBIT';
+        const amount = tx.amount ? tx.amount.toFixed(2) : '0.00';
+        const date = new Date(tx.createdAt).toLocaleString();
+        
+        doc.fontSize(10)
+           .text(`Date: ${date}`)
+           .text(`Type: ${type}`)
+           .text(`Amount: INR ${amount}`)
+           .text(`Status: ${tx.status}`)
+           .text(`Transaction ID: ${tx._id}`)
+           .text('--------------------------------------------------');
+        doc.moveDown(0.5);
+      });
+    }
+
+    doc.end();
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Failed to generate PDF", error: error.message });
+    } else {
+      res.end();
+    }
+  }
+};
+
+
+module.exports = { createTransaction, cashDepositController, getAllTransactions, downloadTransactionPDF };

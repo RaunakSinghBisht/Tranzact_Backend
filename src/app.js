@@ -8,6 +8,10 @@ const transactionRoutes = require('./routes/transaction.route')
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+// app.use(cors({
+//   origin: "https://your-frontend.vercel.app", // only this site can call your API
+//   credentials: true
+// }));
 
 // Routes
 app.get('/', (req, res)=>{res.send("Server is Running...")}) // Health Check API
