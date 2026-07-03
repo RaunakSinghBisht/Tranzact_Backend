@@ -289,5 +289,36 @@ const cashDepositController = async (req, res) => {
     return res.status(500).json({ message: "Cash deposit failed." });
   }
 };
+const getAllTransactions = async (req, res) => {
+  try {
+    const accountId = req.params.accountId;
 
-module.exports = { createTransaction, cashDepositController };
+    const account = await accountModel.findById(accountId);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found." });
+    }
+
+    const userId = req.user._id ? req.user._id.toString() : req.user.id;
+    if (account.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to view transactions for this account." });
+    }
+
+    const transactions = await transactionModel.find({
+      $or: [{ fromAccount: accountId }, { toAccount: accountId }]
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      message: "Transactions retrieved successfully.",
+      transactions,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to retrieve transactions.",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { createTransaction, cashDepositController, getAllTransactions };

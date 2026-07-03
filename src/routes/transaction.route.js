@@ -16,5 +16,11 @@ router.post('/', authMiddleware.verifyToken, transactionController.createTransac
  */
 router.post('/cashDeposit', authMiddleware.isSystemUser, transactionController.cashDepositController);
 
+/**
+ * @route GET /api/transactions/history/:accountId
+ * @desc Get all transaction history
+ */
+router.get('/history/:accountId', authMiddleware.verifyToken, transactionController.getAllTransactions);
+
 
 module.exports = router;
