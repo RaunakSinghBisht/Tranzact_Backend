@@ -34,8 +34,8 @@ const registerUser = async (req, res) => {
     // 6. Set token in httpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 4 * 24 * 60 * 60 * 1000, // 4 days
     });
 
@@ -84,8 +84,8 @@ const loginUser = async (req, res) => {
     // 5. Set token in cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: true,
+      sameSite: "none",
       maxAge: 4 * 24 * 60 * 60 * 1000, // 4 days
     });
 
