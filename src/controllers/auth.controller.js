@@ -40,7 +40,7 @@ const registerUser = async (req, res) => {
     });
 
     // 7. Send success response (exclude password)
-    return res.status(201).json({
+    res.status(201).json({
       message: "User registered successfully",
       user: {
         _id: user._id,
@@ -50,6 +50,8 @@ const registerUser = async (req, res) => {
     });
 
     await emailServices.sendRegistrationEmail(user.email, user.name);
+
+    return;
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
