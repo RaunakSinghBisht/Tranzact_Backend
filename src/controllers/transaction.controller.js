@@ -228,23 +228,21 @@ const cashDepositController = async (req, res) => {
     return res.status(404).json({ message: "System account not found." });
   }
 
+
   let session;
+  let transaction;
+
   try {
+    transaction = await transactionModel.create({
+      fromAccount: fromUserAccount._id,
+      toAccount: toUserAccount._id,
+      amount,
+      idempotencyKey,
+      status: "PENDING",
+    });
+
     session = await mongoose.startSession();
     session.startTransaction();
-
-    const transaction = await transactionModel.create(
-      [
-        {
-          fromAccount: fromUserAccount._id,
-          toAccount: toUserAccount._id,
-          amount,
-          idempotencyKey,
-          status: "PENDING",
-        },
-      ],
-      { session },
-    )[0];
 
     const debitLedgerEntry = await ledgerModel.create(
       [
